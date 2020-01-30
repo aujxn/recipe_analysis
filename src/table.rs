@@ -1,5 +1,7 @@
 use crate::models::Recipe;
 use crate::process::Ingredient;
+use matrixlab::matrix::sparse::SparseMatrix;
+use matrixlab::MatrixElement;
 use std::collections::HashMap;
 
 pub struct Table {
@@ -8,6 +10,7 @@ pub struct Table {
     pub ingredients_vec: Vec<String>,
     pub ingredients_count: Vec<usize>,
     pub points: Vec<(usize, usize)>,
+    pub recipe_ingredient: SparseMatrix<u64>,
 }
 
 impl Table {
@@ -36,12 +39,18 @@ impl Table {
                 }
             }
         }
+        let mut elements = points
+            .iter()
+            .map(|(recipe, ingredient)| MatrixElement::new(*recipe, *ingredient, 1));
+        let mut recipe_ingredient =
+            SparseMatrix::new(recipes.len(), ingredients_vec.len(), elements.collect()).unwrap();
         Table {
             recipes,
             ingredients: ingredients_map,
             ingredients_vec,
             ingredients_count,
             points,
+            recipe_ingredient,
         }
     }
 }

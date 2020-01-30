@@ -1,10 +1,10 @@
 extern crate diesel;
 extern crate rand;
-extern crate recipe_scraper;
+extern crate recipe_analysis;
 
 use self::diesel::prelude::*;
 use self::models::{NewRecipe, Recipe};
-use self::recipe_scraper::*;
+use self::recipe_analysis::*;
 use indexmap::set::IndexSet;
 use rand::Rng;
 use reqwest::blocking::get;
@@ -12,7 +12,7 @@ use std::thread;
 use std::time::Duration;
 
 fn main() {
-    use recipe_scraper::schema::recipes_table::dsl::*;
+    use recipe_analysis::schema::recipes_table::dsl::*;
     let connection: PgConnection = establish_connection();
     let mut rng = rand::thread_rng();
 
@@ -38,7 +38,7 @@ fn main() {
 
         println!("{:?}", next);
 
-        if let Ok((new_recipe, new_urls)) = recipe_scraper::scraper::scrape(next) {
+        if let Ok((new_recipe, new_urls)) = recipe_analysis::scraper::scrape(next) {
             scraped.insert(next);
             let _added: Recipe = add_recipe(&connection, &new_recipe);
             to_scrape = to_scrape.union(&new_urls).cloned().collect();

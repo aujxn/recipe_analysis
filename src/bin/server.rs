@@ -1,12 +1,12 @@
 extern crate diesel;
-extern crate recipe_scraper;
+extern crate recipe_analysis;
 
 use self::diesel::prelude::*;
 use self::models::{NewRecipe, Recipe};
-use self::recipe_scraper::*;
+use self::recipe_analysis::*;
 
 fn main() {
-    use recipe_scraper::schema::recipes_table::dsl::*;
+    use recipe_analysis::schema::recipes_table::dsl::*;
     let connection: PgConnection = establish_connection();
 
     let test = NewRecipe {

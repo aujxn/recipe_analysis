@@ -1,8 +1,8 @@
-extern crate recipe_scraper;
+extern crate recipe_analysis;
 
-use recipe_scraper::models::Recipe;
-use recipe_scraper::process::*;
-use recipe_scraper::table::*;
+use recipe_analysis::models::Recipe;
+use recipe_analysis::process::*;
+use recipe_analysis::table::*;
 
 fn main() {
     let recipes = pull_recipes();
