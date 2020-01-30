@@ -1,5 +1,5 @@
 [package]
-name = "recipe_scraper"
+name = "recipe_analysis"
 version = "0.1.0"
 authors = ["aujxn <ajn6@pdx.edu>"]
 edition = "2018"
