@@ -17,3 +17,4 @@ regex = "1"
 indexmap = "1.3"
 rand = "0.7"
 matrixlab = { git = "https://github.com/aujxn/matrixlab" }
+itertools = "0.8.2"

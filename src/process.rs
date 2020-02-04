@@ -7,6 +7,7 @@ use std::io::prelude::*;
 use std::process::Command;
 use std::str;
 
+#[derive(Clone)]
 pub struct Ingredient {
     pub name: String,
     pub quantity: Option<String>,
@@ -21,6 +22,11 @@ pub fn pull_recipes() -> Vec<Recipe> {
         .load::<Recipe>(&connection)
         .expect("failed to query")
         .iter()
+        .filter(|recipe| {
+            recipe.ingredients.as_str().contains("tortilla")
+                && (recipe.ingredients.as_str().contains("steak")
+                    || recipe.ingredients.as_str().contains("beef"))
+        })
         .cloned()
         .collect()
 }
@@ -61,7 +67,7 @@ pub fn parse_ingredients(recipes: &Vec<Recipe>) -> Vec<Vec<Ingredient>> {
         .output()
         .expect("Conditional Random Field failed");
 
-    let mut all_ingredients: Vec<Vec<Ingredient>> = recipes.iter().map(|_| vec![]).collect();
+    let mut all_ingredients: Vec<Vec<Ingredient>> = vec![vec![]; recipes.len()];
     let ingredient_counter: Vec<usize> = recipes
         .iter()
         .map(|recipe| recipe.ingredients.as_str().split('|').count())
