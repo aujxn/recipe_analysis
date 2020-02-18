@@ -6,7 +6,7 @@ use indexmap::set::IndexSet;
 use regex::Regex;
 use reqwest::blocking::get;
 use select::document::Document;
-use select::predicate::{Attr, Class, Name, Predicate};
+use select::predicate::{Class, Name, Predicate};
 
 pub fn get_links(html_text: &String) -> IndexSet<i32> {
     // unwrap is fine here because this is a valid regex expression

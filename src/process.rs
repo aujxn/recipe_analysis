@@ -18,7 +18,7 @@ pub fn pull_recipes() -> Vec<Recipe> {
     use crate::schema::recipes_table::dsl::*;
     let connection: PgConnection = crate::establish_connection();
 
-    recipes_table
+    let data: Vec<Recipe> = recipes_table
         .load::<Recipe>(&connection)
         .expect("failed to query")
         .iter()
@@ -28,7 +28,10 @@ pub fn pull_recipes() -> Vec<Recipe> {
                     || recipe.ingredients.as_str().contains("beef"))
         })
         .cloned()
-        .collect()
+        .collect();
+
+    println!("recipes pulled: {}", data.len());
+    data
 }
 
 pub fn parse_ingredients(recipes: &Vec<Recipe>) -> Vec<Vec<Ingredient>> {
@@ -45,6 +48,7 @@ pub fn parse_ingredients(recipes: &Vec<Recipe>) -> Vec<Vec<Ingredient>> {
         })
         .collect();
 
+    println!("ingredient phrases: {}", phrases.len());
     let mut ingredient_file = File::create("ingredients.txt").unwrap();
 
     let mut to_write = String::new();

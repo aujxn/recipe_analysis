@@ -27,35 +27,45 @@ pub struct NewRecipe {
 }
 
 #[derive(Queryable, Debug, Clone)]
-pub struct NYTCRecipe {
+pub struct NytcQueryable {
     pub id: i32,
     pub title: String,
-    pub author: String,
+    pub author: Option<String>,
     pub yield_: String,
-    pub time: f32,
-    pub description: String,
-    pub featured: String,
-    pub tags: String,
+    pub time: Option<String>,
+    pub description: Option<String>,
+    pub featured: Option<String>,
+    pub tags: Vec<String>,
     pub ratings: i32,
-    pub rating: f32,
-    pub ingredients: String,
-    pub steps: String,
-    pub comments: String,
+    pub rating: i32,
+    pub sub_components: Option<Vec<String>>,
+    pub indices: Option<Vec<i32>>,
+    pub ingredients: Vec<String>,
+    pub quantities: Vec<String>,
+    pub steps: Vec<String>,
+    pub comments: Option<Vec<String>>,
+    pub comment_votes: Option<Vec<i32>>,
+    pub url_id: String,
 }
 
 #[derive(Insertable)]
 #[table_name = "nyt"]
-pub struct NewNYTC {
+pub struct NytcInsertable {
     pub title: String,
-    pub author: String,
+    pub author: Option<String>,
     pub yield_: String,
-    pub time: f32,
-    pub description: String,
-    pub featured: String,
-    pub tags: String,
+    pub time: Option<String>,
+    pub description: Option<String>,
+    pub featured: Option<String>,
+    pub tags: Vec<String>,
     pub ratings: i32,
-    pub rating: f32,
-    pub ingredients: String,
-    pub steps: String,
-    pub comments: String,
+    pub rating: i32,
+    pub sub_components: Option<Vec<String>>,
+    pub indices: Option<Vec<i32>>,
+    pub ingredients: Vec<String>,
+    pub quantities: Vec<String>,
+    pub steps: Vec<String>,
+    pub comments: Option<Vec<String>>,
+    pub comment_votes: Option<Vec<i32>>,
+    pub url_id: String,
 }

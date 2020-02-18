@@ -1,19 +1,24 @@
 table! {
     nyt (id) {
         id -> Int4,
-        title -> Varchar,
-        author -> Varchar,
+        title -> Text,
+        author -> Nullable<Text>,
         #[sql_name = "yield"]
-        yield_ -> Varchar,
-        time -> Float4,
-        description -> Text,
-        featured -> Text,
-        tags -> Text,
-        ratings -> Nullable<Int4>,
-        rating -> Nullable<Float4>,
-        ingredients -> Text,
-        steps -> Text,
-        comments -> Text,
+        yield_ -> Text,
+        time -> Nullable<Text>,
+        description -> Nullable<Text>,
+        featured -> Nullable<Text>,
+        tags -> Array<Text>,
+        ratings -> Int4,
+        rating -> Int4,
+        sub_components -> Nullable<Array<Text>>,
+        indices -> Nullable<Array<Int4>>,
+        ingredients -> Array<Text>,
+        quantities -> Array<Text>,
+        steps -> Array<Text>,
+        comments -> Nullable<Array<Text>>,
+        comment_votes -> Nullable<Array<Int4>>,
+        url_id -> Text,
     }
 }
 

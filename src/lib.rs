@@ -4,10 +4,13 @@ extern crate dotenv;
 
 pub mod error;
 pub mod models;
+pub mod nytc;
 pub mod process;
+pub mod process_ny;
 pub mod schema;
 pub mod scraper;
 pub mod table;
+pub mod training;
 
 use self::models::{NewRecipe, Recipe};
 use diesel::pg::PgConnection;

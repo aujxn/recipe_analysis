@@ -3,7 +3,7 @@ extern crate rand;
 extern crate recipe_analysis;
 
 use self::diesel::prelude::*;
-use self::models::{NewRecipe, Recipe};
+use self::models::Recipe;
 use self::recipe_analysis::*;
 use indexmap::set::IndexSet;
 use rand::Rng;
