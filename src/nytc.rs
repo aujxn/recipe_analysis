@@ -1,6 +1,7 @@
 extern crate select;
 use crate::error::Error;
 use crate::*;
+use indexmap::IndexSet;
 use rand::Rng;
 use regex::Regex;
 use select::document::Document;
@@ -14,7 +15,6 @@ extern crate diesel;
 
 use crate::diesel::prelude::*;
 use crate::models::{NytcInsertable, NytcQueryable};
-use indexmap::set::IndexSet;
 use reqwest::blocking::Client;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -75,7 +75,7 @@ pub struct Nytc {
     pub time: Option<String>,
     pub description: Option<String>,
     pub featured: Option<String>,
-    pub tags: Vec<String>,
+    pub tags: IndexSet<String>,
     pub ratings: i32,
     pub rating: Rating,
     pub ingredients: Ingredients,
@@ -139,7 +139,7 @@ impl Nytc {
             time: self.time,
             description: self.description,
             featured: self.featured,
-            tags: self.tags,
+            tags: self.tags.into_iter().collect(),
             ratings: self.ratings,
             rating: self.rating as i32,
             sub_components: sub_components,
@@ -198,7 +198,7 @@ impl Nytc {
             time: recipe.time,
             description: recipe.description,
             featured: recipe.featured,
-            tags: recipe.tags,
+            tags: recipe.tags.into_iter().collect(),
             ratings: recipe.ratings,
             rating: Rating::new(recipe.rating),
             ingredients: ingredients,
@@ -509,8 +509,8 @@ fn parse_featured(document: &Document) -> Result<String, Error> {
     Ok(featured)
 }
 
-fn parse_tags(document: &Document) -> Result<Vec<String>, Error> {
-    let mut tags = vec![];
+fn parse_tags(document: &Document) -> Result<IndexSet<String>, Error> {
+    let mut tags = IndexSet::new();
     for tag in document
         .find(Class("tags-nutrition-container"))
         .into_selection()
@@ -518,12 +518,13 @@ fn parse_tags(document: &Document) -> Result<Vec<String>, Error> {
         .filter(Class("tag"))
         .iter()
     {
-        tags.push(String::from(
+        let tag = String::from(
             tag.first_child()
                 .ok_or(Error::ScrapeError)?
                 .as_text()
                 .ok_or(Error::ScrapeError)?,
-        ))
+        );
+        tags.insert(tag);
     }
 
     Ok(tags)

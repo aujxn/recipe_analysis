@@ -1,21 +1,48 @@
+use csv::Reader;
+use indexmap::set::IndexSet;
+use itertools::join;
+use itertools::Itertools;
 use regex::Regex;
 use std::fs::File;
 use std::io::prelude::*;
 
 pub fn clean() {
-    let mut file = File::open("nyt-ingredients-snapshot-2015.csv").unwrap();
-
-    let mut contents = String::new();
-    file.read_to_string(&mut contents).unwrap();
-
-    let mut lines: Vec<String> = contents
-        .as_str()
-        .split("\n")
-        .skip(1)
-        .map(|line| String::from(line))
+    let mut rdr = Reader::from_path("nyt-ingredients-snapshot-2015.csv").unwrap();
+    let data: Vec<Vec<String>> = rdr
+        .into_records()
+        .map(|record| {
+            record
+                .unwrap()
+                .iter()
+                .skip(1)
+                .map(|value| String::from(value))
+                .collect()
+        })
         .collect();
 
-    lines.pop();
+    let mut units = IndexSet::new();
+    for phrase in data.iter() {
+        units.insert(phrase[1].clone());
+    }
+    for unit in units {
+        println!("{}", unit);
+    }
+
+    /*
+     let mut file = File::open("nyt-ingredients-snapshot-2015.csv").unwrap();
+
+     let mut contents = String::new();
+     file.read_to_string(&mut contents).unwrap();
+
+     let mut lines: Vec<String> = contents
+         .as_str()
+         .split("\n")
+         .skip(1)
+         .map(|line| String::from(line))
+         .collect();
+
+     lines.pop();
+    */
 
     /*
     let mut i = 0;
@@ -27,6 +54,7 @@ pub fn clean() {
     }
     */
 
+    /*
     lines.retain(|line| {
         let start = line.find(',').unwrap();
         line[start + 1..].find(',').unwrap() != 0
@@ -34,6 +62,7 @@ pub fn clean() {
 
     // (phrase, name, qty, range, unit)
     let mut data = vec![];
+
 
     for line in lines {
         let start = line.find(',').unwrap();
@@ -60,17 +89,27 @@ pub fn clean() {
             phrase = &tail[..end];
             tail = &tail[end + 1..];
         }
-        let phrase = String::from(phrase);
+        let phrase = decimal(phrase);
 
         end = tail.find(',').unwrap();
         ingredient = &tail[..end];
         tail = &tail[end + 1..];
         let ingredient = String::from(ingredient);
+        units.insert(ingredient.clone());
 
         end = tail.find(',').unwrap();
         qty = &tail[..end];
         tail = &tail[end + 1..];
-        let qty = String::from(qty);
+        let val;
+        if qty != "" {
+            match qty.parse::<f64>() {
+                Ok(parse) => val = format!("{:.2}", parse),
+                Err(_) => val = String::from("0.00"),
+            }
+        } else {
+            val = String::from("0.00");
+        }
+        let qty = String::from(val);
 
         end = tail.find(',').unwrap();
         range = &tail[..end];
@@ -82,6 +121,12 @@ pub fn clean() {
         let unit = String::from(unit);
 
         data.push((phrase, ingredient, qty, range, unit));
+    }
+    */
+
+    /*
+    for unit in units {
+        println!("{}", unit);
     }
 
     data.retain(|line| line.0 != "" && line.1 != "");
@@ -116,8 +161,9 @@ pub fn clean() {
         }
         crf.push('\n');
     }
+    */
 
-    println!("{}", crf);
+    //println!("{}", crf);
     /*
     for line in data {
         println!("{}", line.0);
@@ -166,10 +212,7 @@ fn format_phrase4() {
     assert_eq!(output, "0.50 things");
 }
 
-/// Ingredient phrases have fractions, possibly using unicode characters.
-/// It will be easier to work with a phrase for natural language processing
-/// if these fractions are converted to a decimal.
-pub fn decimal(phrase: &String) -> String {
+pub fn unicode_ascii(phrase: &str) -> String {
     let unicode_frac = vec![
         "⅛", "⅜", "⅝", "⅞", "⅙", "⅚", "⅕", "⅖", "⅗", "⅘", "¼", "¾", "⅓", "⅔", "½",
     ];
@@ -178,7 +221,31 @@ pub fn decimal(phrase: &String) -> String {
         " 3/4", " 1/3", " 2/3", " 1/2",
     ];
 
-    let mut new: String = phrase.clone();
+    let mut new: String = phrase.to_string();
+
+    // Replace all unicode fractions with ascii
+    for (unicode, ascii) in unicode_frac.iter().zip(ascii_frac) {
+        if new.contains(unicode) {
+            new = new.replace(unicode, ascii);
+        }
+    }
+
+    new.split_ascii_whitespace().join(" ")
+}
+
+/// Ingredient phrases have fractions, possibly using unicode characters.
+/// It will be easier to work with a phrase for natural language processing
+/// if these fractions are converted to a decimal.
+pub fn decimal(phrase: &str) -> String {
+    let unicode_frac = vec![
+        "⅛", "⅜", "⅝", "⅞", "⅙", "⅚", "⅕", "⅖", "⅗", "⅘", "¼", "¾", "⅓", "⅔", "½",
+    ];
+    let ascii_frac = vec![
+        " 1/8", " 3/8", " 5/8", " 7/8", " 1/6", " 5/6", " 1/5", " 2/5", " 3/5", " 4/5", " 1/4",
+        " 3/4", " 1/3", " 2/3", " 1/2",
+    ];
+
+    let mut new: String = phrase.to_string();
 
     // Replace all unicode fractions with ascii
     for (unicode, ascii) in unicode_frac.iter().zip(ascii_frac) {

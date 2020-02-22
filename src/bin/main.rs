@@ -3,33 +3,180 @@ extern crate recipe_analysis;
 //use recipe_analysis::models::Recipe;
 use recipe_analysis::models::NytcQueryable;
 use recipe_analysis::nytc::Nytc;
+use recipe_analysis::training::unicode_ascii;
+use serde::{Deserialize, Serialize};
+use serde_json::de::from_str;
+use serde_json::Value;
 //use recipe_analysis::process::*;
-use recipe_analysis::process_ny::*;
+use indexmap::IndexSet;
+use recipe_analysis::process_ny;
 use recipe_analysis::table::*;
 use std::fs::File;
 use std::io::prelude::*;
+use structopt::StructOpt;
+
+#[derive(StructOpt)]
+#[structopt(about = "tool for recipe analysis")]
+enum Opt {
+    Scrape {
+        /// Argument must be nytc or allrecipes
+        #[structopt(short, long)]
+        website: String,
+    },
+    AnalyzeNYT {
+        /// Filter by tags
+        #[structopt(short, long)]
+        tags: Vec<String>,
+
+        /// Filter by ingredients
+        #[structopt(short, long)]
+        ingredients: Vec<String>,
+
+        /// Filter by minimum vote count
+        #[structopt(short, long, default_value = "0")]
+        votes: i32,
+
+        /// Filter by minimum rating (0 to 5)
+        #[structopt(short, long, default_value = "0")]
+        rating: i32,
+
+        /// Filter by author
+        #[structopt(short, long)]
+        author: Option<String>,
+
+        /// Title must contain the substring
+        #[structopt(short, long)]
+        title: Option<String>,
+    },
+}
 
 fn main() {
-    let mut recipes = pull_recipes();
+    match Opt::from_args() {
+        Opt::Scrape { website } => (),
+        Opt::AnalyzeNYT {
+            tags,
+            ingredients,
+            votes,
+            rating,
+            author,
+            title,
+        } => {
+            let mut recipes = process_ny::pull_recipes(tags, votes, rating, author);
 
-    recipes.retain(|x| {
-        x.tags
-            .iter()
-            .find(|tag| tag.contains("Vegetarian"))
-            .is_some()
-            && x.tags
+            if let Some(title) = title {
+                recipes = process_ny::filter_title(recipes, &title)
+            }
+
+            let parsed_ingredients = parse_ingredients(&recipes);
+            /*
+            if ingredients.len() > 0 {
+                let ingredients: IndexSet<String> = ingredients.into_iter().collect();
+                filtered = filtered
+                    .into_iter()
+                    .filter(|recipe| ingredients.is_subset(&recipe.ingredients.ingredients))
+                    .collect();
+            }
+            */
+        }
+    }
+    /*
+        recipes.retain(|x| {
+            x.tags
                 .iter()
-                .find(|tag| tag.contains("Breakfast"))
+                .find(|tag| tag.contains("Vegetarian"))
                 .is_some()
-            && x.rating as u32 == 5
-            && x.ratings > 1000
-    });
+                && x.tags
+                    .iter()
+                    .find(|tag| tag.contains("Breakfast"))
+                    .is_some()
+                && x.rating as u32 == 5
+                && x.ratings > 1000
+        });
+    */
 
-    for recipe in recipes.iter().take(5) {
-        recipe.display();
+    /*
+    for recipe in ingredients {
+        for line in recipe {
+            println!("{}", line);
+        }
+    }
+    */
+
+    let mut file = File::open("labeled").unwrap();
+
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).unwrap();
+
+    let ingredient_count: Vec<i32> = recipes
+        .iter()
+        .map(|recipe| recipe.ingredients.ingredients.len())
+        .collect();
+
+    let ingredients: Vec<Option<String>> = from_str::<Vec<Value>>(&contents)
+        .unwrap()
+        .iter()
+        .map(|obj| {
+            if let Value::Object(values) = obj {
+                if let Some(name) = values.get("name") {
+                    Some(name.to_string())
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    let mut split = vec![];
+
+    let mut i = 0;
+    for (j, recipe) in phrases.iter().enumerate() {
+        split.push(vec![]);
+        for _ in recipe {
+            if let Some(ing) = &ingredients[i] {
+                split[j].push(ing.clone());
+            }
+            i += 1;
+        }
     }
 
-    println!("count: {}\n", recipes.len());
+    let filtered: Vec<Vec<String>> = recipes
+        .into_iter()
+        .zip(split.into_iter())
+        .filter_map(|(recipe, ingredients)| {
+            if recipe.tags.iter().find(|&tag| tag == "Cocktails").is_some() {
+                Some(ingredients)
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    let (ingredients_map, ingredients_vec, ingredients_count, ingredient_cooccurrence) =
+        ingredient_map(&filtered);
+
+    for ingredient in ingredients_vec {
+        println!("{}", ingredient);
+    }
+    /*
+    for (x, y, count) in ingredient_cooccurrence.points {
+        println!("{} {} {}", x, y, count);
+    }
+    */
+    /*
+    for recipe in recipes.iter().take(5) {
+        for phrase in recipe.ingredients.ingredients.iter() {
+            if phrase.0 != "" {
+                print!("{} ", phrase.0);
+            }
+            println!("{}", phrase.1);
+        }
+        println!();
+    }
+    */
+
+    //println!("count: {}\n", recipes.len());
 
     /* CRF format
     for recipe in recipes.iter() {
@@ -69,14 +216,14 @@ fn main() {
             .split_ascii_whitespace();
 
         // number of vertices before coarsening
-        let n: usize = nk.next().unwrap().parse().unwrap();
+        let n: i32 = nk.next().unwrap().parse().unwrap();
 
         // number of hierarchy levels
-        let k: usize = nk.next().unwrap().parse().unwrap();
+        let k: i32 = nk.next().unwrap().parse().unwrap();
         println!("unique ingredients: {}\nlevels: {}", n, k);
 
         // nodes at each level
-        let counts: Vec<usize> = agg_iter
+        let counts: Vec<i32> = agg_iter
             .next()
             .unwrap()
             .split_ascii_whitespace()
@@ -84,7 +231,7 @@ fn main() {
             .collect();
 
         // the partitioned data
-        let mut hierarchies: Vec<Vec<Vec<usize>>> = Vec::new();
+        let mut hierarchies: Vec<Vec<Vec<i32>>> = Vec::new();
         for size in counts {
             let mut level = Vec::new();
             for _ in 0..size {
@@ -120,7 +267,7 @@ fn main() {
         println!("{}", table.recipes.len());
         println!("{}", table.points.len());
 
-        let mut sorted: Vec<(String, usize)> = table
+        let mut sorted: Vec<(String, i32)> = table
             .ingredients_vec
             .iter()
             .zip(table.ingredients_count.iter())
