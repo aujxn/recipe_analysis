@@ -1,3 +1,6 @@
+use itertools::Itertools;
+use std::fs::File;
+use std::io::prelude::*;
 use std::process::Command;
 
 pub fn embed() {
@@ -9,7 +12,11 @@ pub fn embed() {
     println!("{}", &std::str::from_utf8(&result.stdout).unwrap());
 }
 
-pub fn plot() {
+pub fn plot(ingredients: &Vec<String>) {
+    let ingredients = ingredients.iter().join("\n");
+    let mut ingredients_file = File::create("temp/ing.temp").unwrap();
+    ingredients_file.write_all(ingredients.as_bytes()).unwrap();
+
     let _ = Command::new("../pyvenv/bin/python3")
         .args(&[
             "../graph-embed/scripts/plot-graph.py",
@@ -19,6 +26,8 @@ pub fn plot() {
             "temp/part.temp",
             "-coords",
             "temp/coords.temp",
+            "-ingredients",
+            "temp/ing.temp",
             "-o",
             "temp/plot.temp",
         ])

@@ -92,13 +92,14 @@ fn main() {
             let (_recipes, parsed_ingredients): (Vec<Nytc>, Vec<IndexSet<String>>) =
                 data.into_iter().unzip();
 
-            let (_ingredients_map, _ingredients_vec, _ingredients_count, ingredient_cooccurrence) =
+            let (_ingredients_map, ingredients_vec, _ingredients_count, ingredient_cooccurrence) =
                 ingredient_map(&parsed_ingredients);
 
             ingredient_cooccurrence.make_coolist();
+
             embed::embed();
             if plot {
-                embed::plot();
+                embed::plot(&ingredients_vec);
             }
         }
     }
