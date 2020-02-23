@@ -1,12 +1,65 @@
 extern crate select;
 
 use crate::error::Error;
-use crate::models::NewRecipe;
+use crate::models::{NewRecipe, Recipe};
+use diesel::pg::PgConnection;
+use diesel::prelude::*;
 use indexmap::set::IndexSet;
+use rand::Rng;
 use regex::Regex;
 use reqwest::blocking::get;
 use select::document::Document;
 use select::predicate::{Class, Name, Predicate};
+use std::thread;
+use std::time::Duration;
+
+pub fn add_recipe(connection: &PgConnection, recipe: &NewRecipe) -> Recipe {
+    use crate::schema::recipes_table;
+
+    diesel::insert_into(recipes_table::table)
+        .values(recipe)
+        .get_result(connection)
+        .expect("error saving new recipe")
+}
+
+pub fn crawl() {
+    use crate::schema::recipes_table::dsl::*;
+    let connection: PgConnection = crate::establish_connection();
+    let mut rng = rand::thread_rng();
+
+    let mut scraped: IndexSet<i32> = recipes_table
+        .load::<Recipe>(&connection)
+        .expect("failed to query")
+        .iter()
+        .map(|recipe| recipe.url_id)
+        .collect();
+    println!("Recipes in DB: {:?}", scraped.len());
+
+    let url = String::from("https://www.allrecipes.com/recipes/17562/dinner/");
+    let response = get(url.as_str()).unwrap();
+    let html_text = response.text().unwrap();
+    let mut to_scrape: IndexSet<i32> = get_links(&html_text)
+        .difference(&scraped)
+        .cloned()
+        .collect();
+
+    loop {
+        println!("Recipes in scrape queue: {:?}", to_scrape.len());
+        let next = to_scrape.pop().unwrap();
+
+        println!("{:?}", next);
+
+        if let Ok((new_recipe, new_urls)) = scrape(next) {
+            scraped.insert(next);
+            let _added: Recipe = add_recipe(&connection, &new_recipe);
+            to_scrape = to_scrape.union(&new_urls).cloned().collect();
+            to_scrape = to_scrape.difference(&scraped).cloned().collect();
+        }
+
+        let sleep = Duration::from_secs(rng.gen_range(1, 6));
+        thread::sleep(sleep);
+    }
+}
 
 pub fn get_links(html_text: &String) -> IndexSet<i32> {
     // unwrap is fine here because this is a valid regex expression

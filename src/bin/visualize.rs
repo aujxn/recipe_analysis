@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::prelude::*;
 
-fn main(filter: &str) {
+fn main() {
     let mut ingredients_file = File::open("cocktail_ingredients").unwrap();
 
     let mut ingredients = String::new();

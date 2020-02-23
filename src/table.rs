@@ -1,9 +1,11 @@
 use crate::models::Recipe;
 use crate::process::Ingredient;
+use indexmap::IndexSet;
 use itertools::Itertools;
-use matrixlab::matrix::sparse::SparseMatrix;
-use matrixlab::MatrixElement;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::prelude::*;
+use std::path::Path;
 
 pub struct RecipeVecs {
     // First index is recipe ID, nested Vec is list of ingredient ID's
@@ -38,9 +40,22 @@ pub struct IngredientCooccurrence {
     //pub ingredient_ingredient: SparseMatrix<u64>,
 }
 
+impl IngredientCooccurrence {
+    pub fn make_coolist(&self) {
+        let coolist = self
+            .points
+            .iter()
+            .map(|(x, y, val)| format!("{} {} {}", x, y, val))
+            .join("\n");
+
+        let path = Path::new("temp/coolist");
+        let mut temp_file = File::create(&path).unwrap();
+        temp_file.write_all(coolist.as_bytes()).unwrap();
+    }
+}
 // ID lookup for ingredient, ingredient lookup from ID, ingredient counts
 pub fn ingredient_map(
-    ingredients: &Vec<Vec<String>>,
+    ingredients: &Vec<IndexSet<String>>,
 ) -> (
     HashMap<String, usize>,
     Vec<String>,

@@ -3,7 +3,10 @@ extern crate diesel;
 use self::diesel::prelude::*;
 use crate::models::NytcQueryable;
 use crate::nytc::Nytc;
+use indexmap::IndexSet;
 use itertools::Itertools;
+use serde_json::de::from_str;
+use serde_json::Value;
 use std::fs::File;
 use std::io::prelude::*;
 use std::process::Command;
@@ -25,11 +28,11 @@ pub fn pull_recipes(
     }
 
     if q_votes > 0 {
-        query = query.filter(ratings.gt(q_votes));
+        query = query.filter(ratings.ge(q_votes));
     }
 
     if q_rating > 0 {
-        query = query.filter(rating.gt(q_rating));
+        query = query.filter(rating.ge(q_rating));
     }
 
     if q_tags.len() > 0 {
@@ -51,17 +54,80 @@ pub fn filter_title(recipes: Vec<Nytc>, title: &str) -> Vec<Nytc> {
     recipes
         .into_iter()
         .filter(|recipe| {
-            title.make_ascii_lowercase();
-            recipe.title.make_ascii_lowercase();
-            recipe.title.contains(&title)
+            let title = title.to_ascii_lowercase();
+            let recipe = recipe.title.to_ascii_lowercase();
+            recipe.contains(&title)
         })
         .collect()
 }
 
-pub fn parse_ingredients(recipes: &Vec<Nytc>) -> Vec<IndexSet<String>> {}
+pub fn parse_ingredients(recipes: &Vec<Nytc>) -> Vec<IndexSet<String>> {
+    let phrases = get_phrases(recipes);
+    let mut temp_file = File::create("../../ingredient-phrase-tagger/temp/phrases").unwrap();
+    temp_file.write_all(phrases.as_bytes()).unwrap();
 
-fn get_phrases(recipes: &Vec<Nytc>) -> Vec<Vec<String>> {
-    recipes
+    let _ = Command::new("sh").arg("parse.sh").output().unwrap();
+    //print!("{}", &str::from_utf8(&result.stdout).unwrap());
+
+    let mut labeled = File::open("./temp/labeled").unwrap();
+    let mut labeled_contents = String::new();
+    labeled.read_to_string(&mut labeled_contents).unwrap();
+
+    let ingredient_count: Vec<usize> = recipes
+        .iter()
+        .map(|recipe| {
+            recipe
+                .ingredients
+                .ingredients
+                .iter()
+                .fold(
+                    0,
+                    |acc, (_, phrase)| {
+                        if phrase.trim() != "" {
+                            acc + 1
+                        } else {
+                            acc
+                        }
+                    },
+                )
+        })
+        .collect();
+
+    let ingredients: Vec<Option<String>> = from_str::<Vec<Value>>(&labeled_contents)
+        .unwrap()
+        .iter()
+        .map(|obj| {
+            if let Value::Object(values) = obj {
+                if let Some(name) = values.get("name") {
+                    Some(name.as_str().unwrap().trim_matches('"').to_string())
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    let mut split = vec![];
+    let mut i = 0;
+
+    for count in ingredient_count {
+        let mut next = IndexSet::new();
+        for _ in 0..count {
+            if let Some(ing) = &ingredients[i] {
+                next.insert(ing.clone());
+            }
+            i += 1;
+        }
+        split.push(next);
+    }
+
+    split
+}
+
+fn get_phrases(recipes: &Vec<Nytc>) -> String {
+    let phrases: Vec<Vec<String>> = recipes
         .iter()
         .map(|recipe| {
             recipe
@@ -88,7 +154,12 @@ fn get_phrases(recipes: &Vec<Nytc>) -> Vec<Vec<String>> {
                 })
                 .collect()
         })
-        .collect()
+        .collect();
+
+    phrases
+        .iter()
+        .map(|recipe| recipe.iter().join("\n"))
+        .join("\n")
 }
 
 fn unicode_ascii(phrase: &str) -> String {

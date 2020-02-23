@@ -211,7 +211,7 @@ impl Nytc {
 
 pub fn crawl() {
     use crate::schema::nyt::dsl::*;
-    let connection: PgConnection = establish_connection();
+    let connection: PgConnection = crate::establish_connection();
     let mut rng = rand::thread_rng();
 
     let user = "";
