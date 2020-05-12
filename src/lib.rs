@@ -4,6 +4,9 @@ extern crate dotenv;
 
 pub mod embed;
 pub mod error;
+pub mod expanded;
+pub mod hierarchy;
+pub mod louvain;
 pub mod models;
 pub mod nytc;
 pub mod process;

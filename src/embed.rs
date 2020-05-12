@@ -5,7 +5,7 @@ use std::process::Command;
 
 pub fn embed() {
     let result = Command::new("../graph-embed/build/examples/embedder")
-        .arg("/home/austen/Documents/school/research/recipe_analysis/temp/coolist")
+        .arg("/home/austen/Documents/school/research/recipe_analysis/temp/expanded_coolist")
         .output()
         .unwrap();
 
@@ -17,7 +17,7 @@ pub fn plot(ingredients: &Vec<String>) {
     let mut ingredients_file = File::create("temp/ing.temp").unwrap();
     ingredients_file.write_all(ingredients.as_bytes()).unwrap();
 
-    let _ = Command::new("../pyvenv/bin/python3")
+    let _ = Command::new("python")
         .args(&[
             "../graph-embed/scripts/plot-graph.py",
             "-graph",

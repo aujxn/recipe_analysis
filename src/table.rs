@@ -53,6 +53,7 @@ impl IngredientCooccurrence {
         temp_file.write_all(coolist.as_bytes()).unwrap();
     }
 }
+
 // ID lookup for ingredient, ingredient lookup from ID, ingredient counts
 pub fn ingredient_map(
     ingredients: &Vec<IndexSet<String>>,
@@ -61,14 +62,19 @@ pub fn ingredient_map(
     Vec<String>,
     Vec<usize>,
     IngredientCooccurrence,
+    Vec<Vec<usize>>,
 ) {
     let mut ingredient_id = 0;
     let mut recipe_id = 0;
     let recipe_count = ingredients.len();
 
+    // List of all unique ingredients --- indexed by ingredient ID
     let mut ingredients_vec: Vec<String> = vec![];
+    // Occurence counts of the ingredients in the above vec
     let mut ingredients_count: Vec<usize> = vec![];
+    // Lookup table for ingredient ID given ingredient name
     let mut ingredients_map = HashMap::new();
+    // Vec or recipes --- each recipe is a vec of ingredient IDs
     let mut recipe_vecs = vec![vec![]; recipe_count];
 
     // Go through recipes and create Vec of unique ingredients
@@ -119,7 +125,13 @@ pub fn ingredient_map(
     let ic = IngredientCooccurrence {
         points: ingredient_ingredient_points,
     };
-    (ingredients_map, ingredients_vec, ingredients_count, ic)
+    (
+        ingredients_map,
+        ingredients_vec,
+        ingredients_count,
+        ic,
+        recipe_vecs,
+    )
 }
 
 pub fn init(

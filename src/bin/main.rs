@@ -1,12 +1,9 @@
 extern crate recipe_analysis;
 
 use indexmap::IndexSet;
-use recipe_analysis::embed;
-use recipe_analysis::nytc;
-use recipe_analysis::nytc::Nytc;
-use recipe_analysis::process_ny;
-use recipe_analysis::scraper;
-use recipe_analysis::table::*;
+use recipe_analysis::{
+    embed, expanded, hierarchy::Hierarchy, louvain, nytc, nytc::Nytc, process_ny, scraper, table,
+};
 use structopt::StructOpt;
 
 #[derive(StructOpt)]
@@ -74,6 +71,7 @@ fn main() {
                 recipes = process_ny::filter_title(recipes, &title)
             }
 
+            // Vec of recipes --- each recipe is an IndexSet of ingredients as Strings
             let parsed_ingredients = process_ny::parse_ingredients(&recipes);
 
             let mut data: Vec<(Nytc, IndexSet<String>)> = recipes
@@ -92,15 +90,65 @@ fn main() {
             let (_recipes, parsed_ingredients): (Vec<Nytc>, Vec<IndexSet<String>>) =
                 data.into_iter().unzip();
 
-            let (_ingredients_map, ingredients_vec, _ingredients_count, ingredient_cooccurrence) =
-                ingredient_map(&parsed_ingredients);
+            let (
+                ingredients_map,
+                ingredients_vec,
+                _ingredients_count,
+                ingredient_cooccurrence,
+                recipe_ingredient,
+            ) = table::ingredient_map(&parsed_ingredients);
 
             ingredient_cooccurrence.make_coolist();
 
-            embed::embed();
+            let mut expanded_ingredient_relation =
+                expanded::ExpandedIngredientRelation::new(recipe_ingredient, ingredients_vec.len());
+
+            let choices = ["shrimp", "ginger", "lime", "rice"];
+            let choices_id = choices
+                .iter()
+                .map(|x| *ingredients_map.get(&String::from(*x)).unwrap())
+                .collect();
+            expanded_ingredient_relation.connect_clique(&choices_id);
+
+            expanded_ingredient_relation.build_coolist();
+
+            let n = expanded_ingredient_relation.number_of_vertices();
+
+            let interpolation_matrices = louvain::louvain(n);
+            let hierarchy = Hierarchy::new(
+                interpolation_matrices,
+                ingredients_vec,
+                ingredients_map.clone(),
+                expanded_ingredient_relation,
+            );
+
+            let communities = hierarchy.generate_recipes(3).unwrap();
+
+            for comm in communities {
+                if choices
+                    .iter()
+                    .by_ref()
+                    .any(|x| comm.get(&String::from(*x)).is_some())
+                {
+                    println!();
+                    let mut ingredients = comm.iter().collect::<Vec<_>>();
+                    ingredients.sort_unstable_by(|a, b| b.1.len().cmp(&a.1.len()));
+                    for (ingredient, recipes) in ingredients.iter() {
+                        print!("{} ", ingredient);
+                        for recipe in recipes.iter().filter_map(|x| *x) {
+                            print!("{} ", recipe);
+                        }
+                        println!();
+                    }
+                }
+            }
+
+            //embed::embed();
+            /*
             if plot {
                 embed::plot(&ingredients_vec);
             }
+            */
         }
     }
 }

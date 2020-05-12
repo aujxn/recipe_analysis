@@ -27,7 +27,7 @@ pub struct Ingredients {
     pub sub_components: Option<Vec<(String, i32)>>,
 
     // Quantity, ingredient - quantity is a string over a
-    // float because of NYTC use of fraction characters
+    // float because of NYTC use of fraction unicode characters
     // quantity might also be an empty string if none was listed
     pub ingredients: Vec<(String, String)>,
 }
