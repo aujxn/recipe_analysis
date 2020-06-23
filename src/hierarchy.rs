@@ -1,4 +1,5 @@
 use crate::expanded::ExpandedIngredientRelation;
+use indexmap::set::IndexSet;
 use matrixlab::matrix::sparse::SparseMatrix;
 use std::collections::HashMap;
 
@@ -34,7 +35,7 @@ impl Hierarchy {
     pub fn generate_recipes(
         &self,
         level: usize,
-    ) -> Result<Vec<HashMap<String, Vec<Option<usize>>>>, &'static str> {
+    ) -> Result<Vec<HashMap<String, IndexSet<usize>>>, &'static str> {
         if level > self.interpolation_matrices.len() {
             Err("out of range")
         } else {
@@ -43,17 +44,28 @@ impl Hierarchy {
                 partition = &partition * &self.interpolation_matrices[i];
             }
 
-            let mut aggregates: Vec<HashMap<String, Vec<Option<usize>>>> =
+            let mut aggregates: Vec<HashMap<String, IndexSet<usize>>> =
                 vec![HashMap::new(); partition.num_columns()];
 
             for (node, agg, _) in partition.elements() {
                 let ingredient_id = self.relation.get_ingredient_id(node);
                 let recipe_id = self.relation.get_recipe_id(node);
+
+                if ingredient_id.is_none() || recipe_id.is_none() {
+                    continue;
+                }
+                let ingredient_id = ingredient_id.unwrap();
+                let recipe_id = recipe_id.unwrap();
+
                 let name = &self.ingredients_vec[ingredient_id];
                 match aggregates[agg].get_mut(name) {
-                    Some(recipes) => recipes.push(recipe_id),
+                    Some(recipes) => {
+                        recipes.insert(recipe_id);
+                    }
                     None => {
-                        aggregates[agg].insert(name.clone(), vec![recipe_id]);
+                        let mut set = IndexSet::new();
+                        set.insert(recipe_id);
+                        aggregates[agg].insert(name.clone(), set);
                     }
                 };
             }

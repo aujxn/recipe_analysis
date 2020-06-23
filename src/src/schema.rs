@@ -1,4 +1,3 @@
-use crate::recipe::Measurement;
 table! {
     comments (id) {
         id -> Int4,
@@ -40,8 +39,6 @@ table! {
 }
 
 table! {
-    use super::Measurement;
-    use diesel::sql_types::*;
     recipe_ingredient (recipes_id, ingredients_id) {
         recipes_id -> Int4,
         ingredients_id -> Int4,

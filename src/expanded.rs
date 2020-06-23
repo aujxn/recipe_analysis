@@ -6,24 +6,29 @@ use std::io::prelude::*;
 use std::path::Path;
 
 enum ExpandedVertex {
-    // A Node has only an associated ingredient ID
-    Node(usize),
+    // has only an associated ingredient ID
+    IngredientHub(usize),
+    // has only an associated recipe ID
+    RecipeHub(usize),
+
     // A Vertex has an associated ingredient and recipe ID
     Vertex((usize, usize)),
 }
 
 impl ExpandedVertex {
-    pub fn get_ingredient_id(&self) -> usize {
+    pub fn get_ingredient_id(&self) -> Option<usize> {
         match self {
-            Self::Node(id) => *id,
-            Self::Vertex((id, _)) => *id,
+            Self::IngredientHub(id) => Some(*id),
+            Self::Vertex((id, _)) => Some(*id),
+            Self::RecipeHub(_) => None,
         }
     }
 
     pub fn get_recipe_id(&self) -> Option<usize> {
         match self {
-            Self::Node(id) => None,
+            Self::IngredientHub(id) => None,
             Self::Vertex((_, id)) => Some(*id),
+            Self::RecipeHub(id) => Some(*id),
         }
     }
 }
@@ -36,7 +41,7 @@ pub struct ExpandedIngredientRelation {
 impl ExpandedIngredientRelation {
     pub fn new(recipes: Vec<Vec<usize>>, num_ingredients: usize) -> ExpandedIngredientRelation {
         let mut vertices: Vec<ExpandedVertex> = (0..num_ingredients)
-            .map(|id| ExpandedVertex::Node(id))
+            .map(|id| ExpandedVertex::IngredientHub(id))
             .collect();
         let mut edges: Vec<(usize, usize)> = vec![];
         let mut counter = num_ingredients;
@@ -48,14 +53,14 @@ impl ExpandedIngredientRelation {
         );
 
         for (recipe_id, recipe) in recipes.iter().enumerate() {
-            let start = counter;
+            vertices.push(ExpandedVertex::RecipeHub(recipe_id));
+            let recipe_index = counter;
+            counter += 1;
             for &ingredient_id in recipe {
                 vertices.push(ExpandedVertex::Vertex((ingredient_id, recipe_id)));
                 edges.push((ingredient_id, counter));
+                edges.push((recipe_index, counter));
                 counter += 1;
-            }
-            for pair in (start..counter).tuple_combinations() {
-                edges.push(pair);
             }
         }
 
@@ -68,10 +73,13 @@ impl ExpandedIngredientRelation {
             .iter()
             .enumerate()
             .filter_map(|(i, vertex)| {
-                if ingredients
-                    .iter()
-                    .any(|target| *target == vertex.get_ingredient_id())
-                {
+                if ingredients.iter().any(|target| {
+                    if let Some(id) = vertex.get_ingredient_id() {
+                        *target == id
+                    } else {
+                        false
+                    }
+                }) {
                     Some(i)
                 } else {
                     None
@@ -79,15 +87,22 @@ impl ExpandedIngredientRelation {
             })
             .collect();
 
+        let target_index = self.vertices.len();
+        self.vertices.push(ExpandedVertex::RecipeHub(9999999));
+        for index in target_vertices {
+            self.edges.push((index, target_index));
+        }
+        /*
         for pair in target_vertices.into_iter().tuple_combinations() {
             self.edges.push(pair);
         }
 
         self.edges.sort();
         self.edges.dedup();
+        */
     }
 
-    pub fn get_ingredient_id(&self, node: usize) -> usize {
+    pub fn get_ingredient_id(&self, node: usize) -> Option<usize> {
         self.vertices[node].get_ingredient_id()
     }
 

@@ -22,3 +22,5 @@ serde_json = "1.0"
 url = "2.1.1"
 csv = "1.1"
 structopt = "0.3"
+diesel-derive-enum = { version = "0.4", features = ["postgres"] }
+bimap = "0.4"

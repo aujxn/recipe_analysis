@@ -2,7 +2,7 @@ extern crate diesel;
 
 use self::diesel::prelude::*;
 use crate::models::NytcQueryable;
-use crate::nytc::Nytc;
+use crate::scrapers::nytcooking::Nytc;
 use indexmap::IndexSet;
 use itertools::Itertools;
 use serde_json::de::from_str;

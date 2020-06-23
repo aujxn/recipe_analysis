@@ -1,6 +1,7 @@
 use super::schema::{nyt, recipes_table};
+use serde::Serialize;
 
-#[derive(Queryable, Debug, Clone)]
+#[derive(Queryable, Debug, Clone, Serialize)]
 pub struct Recipe {
     pub id: i32,
     pub title: String,
@@ -26,7 +27,7 @@ pub struct NewRecipe {
     pub url_id: i32,
 }
 
-#[derive(Queryable, Debug, Clone)]
+#[derive(Queryable, Debug, Clone, Serialize)]
 pub struct NytcQueryable {
     pub id: i32,
     pub title: String,

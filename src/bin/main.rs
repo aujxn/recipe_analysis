@@ -2,7 +2,8 @@ extern crate recipe_analysis;
 
 use indexmap::IndexSet;
 use recipe_analysis::{
-    embed, expanded, hierarchy::Hierarchy, louvain, nytc, nytc::Nytc, process_ny, scraper, table,
+    embed, expanded, hierarchy::Hierarchy, louvain, process_ny, scrapers::allRecipes,
+    scrapers::nytcooking, scrapers::nytcooking::Nytc, table,
 };
 use structopt::StructOpt;
 
@@ -14,6 +15,11 @@ enum Opt {
         #[structopt(short, long)]
         website: String,
     },
+    /* TODO
+    Dump {
+
+    },
+    */
     AnalyzeNYT {
         /// Filter by tags
         #[structopt(short, long)]
@@ -49,9 +55,9 @@ fn main() {
     match Opt::from_args() {
         Opt::Scrape { website } => {
             if website == "nytc" {
-                nytc::crawl();
+                nytcooking::crawl();
             } else if website == "all_recipes" {
-                scraper::crawl();
+                allRecipes::crawl();
             } else {
                 println!("Valid websites to scrape include:\n\n nytc \n\n all_recipes");
             }
@@ -103,7 +109,7 @@ fn main() {
             let mut expanded_ingredient_relation =
                 expanded::ExpandedIngredientRelation::new(recipe_ingredient, ingredients_vec.len());
 
-            let choices = ["shrimp", "ginger", "lime", "rice"];
+            let choices = ["chicken", "soy sauce", "brown sugar"];
             let choices_id = choices
                 .iter()
                 .map(|x| *ingredients_map.get(&String::from(*x)).unwrap())
@@ -122,22 +128,31 @@ fn main() {
                 expanded_ingredient_relation,
             );
 
-            let communities = hierarchy.generate_recipes(3).unwrap();
+            let communities = hierarchy.generate_recipes(2).unwrap();
 
             for comm in communities {
                 if choices
                     .iter()
                     .by_ref()
-                    .any(|x| comm.get(&String::from(*x)).is_some())
+                    .all(|x| comm.get(&String::from(*x)).is_some())
                 {
                     println!();
                     let mut ingredients = comm.iter().collect::<Vec<_>>();
                     ingredients.sort_unstable_by(|a, b| b.1.len().cmp(&a.1.len()));
+                    let is_original = ingredients
+                        .iter()
+                        .take(8)
+                        .fold(IndexSet::new(), |acc, (_, recipes)| {
+                            acc.intersection(recipes).cloned().collect()
+                        });
+                    println!("shared: {:?}", is_original);
                     for (ingredient, recipes) in ingredients.iter() {
-                        print!("{} ", ingredient);
-                        for recipe in recipes.iter().filter_map(|x| *x) {
+                        print!("{} - {} ", recipes.len(), ingredient);
+                        /*
+                        for recipe in recipes.iter() {
                             print!("{} ", recipe);
                         }
+                        */
                         println!();
                     }
                 }
