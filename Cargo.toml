@@ -24,3 +24,4 @@ csv = "1.1"
 structopt = "0.3"
 diesel-derive-enum = { version = "0.4", features = ["postgres"] }
 bimap = "0.4"
+anyhow = "1.0"

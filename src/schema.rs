@@ -1,4 +1,3 @@
-use crate::recipe::Measurement;
 table! {
     comments (id) {
         id -> Int4,
@@ -40,22 +39,21 @@ table! {
 }
 
 table! {
-    use super::Measurement;
-    use diesel::sql_types::*;
-    recipe_ingredient (recipes_id, ingredients_id) {
-        recipes_id -> Int4,
-        ingredients_id -> Int4,
+    recipe_ingredient (id) {
+        id -> Int4,
+        recipes_id -> Nullable<Int4>,
+        ingredients_id -> Nullable<Int4>,
         sub_components_id -> Nullable<Int4>,
-        quantity_type -> Nullable<Measurement>,
-        quantity_value -> Nullable<Int4>,
+        quantity -> Float4,
         quantity_note -> Nullable<Text>,
     }
 }
 
 table! {
-    recipe_tag (recipes_id, tags_id) {
-        recipes_id -> Int4,
-        tags_id -> Int4,
+    recipe_tag (id) {
+        id -> Int4,
+        recipes_id -> Nullable<Int4>,
+        tags_id -> Nullable<Int4>,
     }
 }
 
@@ -69,8 +67,8 @@ table! {
         time -> Nullable<Int4>,
         description -> Nullable<Text>,
         steps -> Array<Text>,
-        num_ratings -> Nullable<Int4>,
-        avg_rating -> Nullable<Float4>,
+        num_ratings -> Int4,
+        avg_rating -> Float4,
     }
 }
 

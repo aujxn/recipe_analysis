@@ -69,7 +69,8 @@ pub fn parse_ingredients(recipes: &Vec<Nytc>) -> Vec<IndexSet<String>> {
     let _ = Command::new("sh").arg("parse.sh").output().unwrap();
     //print!("{}", &str::from_utf8(&result.stdout).unwrap());
 
-    let mut labeled = File::open("./temp/labeled").unwrap();
+    let mut labeled =
+        File::open("/home/austen/Documents/school/research/recipe_analysis/temp/labeled").unwrap();
     let mut labeled_contents = String::new();
     labeled.read_to_string(&mut labeled_contents).unwrap();
 

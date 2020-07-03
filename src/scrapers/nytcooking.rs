@@ -65,6 +65,17 @@ impl Rating {
             _ => Rating::Zero,
         }
     }
+
+    pub fn to_f32(&self) -> f32 {
+        match self {
+            Rating::One => 1.0,
+            Rating::Two => 2.0,
+            Rating::Three => 3.0,
+            Rating::Four => 4.0,
+            Rating::Five => 5.0,
+            Rating::Zero => 0.0,
+        }
+    }
 }
 
 #[derive(Debug)]

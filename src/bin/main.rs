@@ -105,64 +105,68 @@ fn main() {
             ) = table::ingredient_map(&parsed_ingredients);
 
             ingredient_cooccurrence.make_coolist();
+            embed::embed();
+            embed::plot(&ingredients_vec);
 
-            let mut expanded_ingredient_relation =
-                expanded::ExpandedIngredientRelation::new(recipe_ingredient, ingredients_vec.len());
+            /*
+                let mut expanded_ingredient_relation =
+                    expanded::ExpandedIngredientRelation::new(recipe_ingredient, ingredients_vec.len());
 
-            let choices = ["chicken", "soy sauce", "brown sugar"];
-            let choices_id = choices
-                .iter()
-                .map(|x| *ingredients_map.get(&String::from(*x)).unwrap())
-                .collect();
-            expanded_ingredient_relation.connect_clique(&choices_id);
-
-            expanded_ingredient_relation.build_coolist();
-
-            let n = expanded_ingredient_relation.number_of_vertices();
-
-            let interpolation_matrices = louvain::louvain(n);
-            let hierarchy = Hierarchy::new(
-                interpolation_matrices,
-                ingredients_vec,
-                ingredients_map.clone(),
-                expanded_ingredient_relation,
-            );
-
-            let communities = hierarchy.generate_recipes(2).unwrap();
-
-            for comm in communities {
-                if choices
+                let choices = ["chicken", "soy sauce", "brown sugar"];
+                let choices_id = choices
                     .iter()
-                    .by_ref()
-                    .all(|x| comm.get(&String::from(*x)).is_some())
-                {
-                    println!();
-                    let mut ingredients = comm.iter().collect::<Vec<_>>();
-                    ingredients.sort_unstable_by(|a, b| b.1.len().cmp(&a.1.len()));
-                    let is_original = ingredients
+                    .map(|x| *ingredients_map.get(&String::from(*x)).unwrap())
+                    .collect();
+                expanded_ingredient_relation.connect_clique(&choices_id);
+
+                expanded_ingredient_relation.build_coolist();
+
+                let n = expanded_ingredient_relation.number_of_vertices();
+
+                let interpolation_matrices = louvain::louvain(n);
+                let hierarchy = Hierarchy::new(
+                    interpolation_matrices,
+                    ingredients_vec,
+                    ingredients_map.clone(),
+                    expanded_ingredient_relation,
+                );
+
+                let communities = hierarchy.generate_recipes(2).unwrap();
+
+                for comm in communities {
+                    if choices
                         .iter()
-                        .take(8)
-                        .fold(IndexSet::new(), |acc, (_, recipes)| {
-                            acc.intersection(recipes).cloned().collect()
-                        });
-                    println!("shared: {:?}", is_original);
-                    for (ingredient, recipes) in ingredients.iter() {
-                        print!("{} - {} ", recipes.len(), ingredient);
-                        /*
-                        for recipe in recipes.iter() {
-                            print!("{} ", recipe);
-                        }
-                        */
+                        .by_ref()
+                        .all(|x| comm.get(&String::from(*x)).is_some())
+                    {
                         println!();
+                        let mut ingredients = comm.iter().collect::<Vec<_>>();
+                        ingredients.sort_unstable_by(|a, b| b.1.len().cmp(&a.1.len()));
+                        let is_original = ingredients
+                            .iter()
+                            .take(8)
+                            .fold(IndexSet::new(), |acc, (_, recipes)| {
+                                acc.intersection(recipes).cloned().collect()
+                            });
+                        println!("shared: {:?}", is_original);
+                        for (ingredient, recipes) in ingredients.iter() {
+                            print!("{} - {} ", recipes.len(), ingredient);
+                            /*
+                            for recipe in recipes.iter() {
+                                print!("{} ", recipe);
+                            }
+                            */
+                            println!();
+                        }
                     }
                 }
-            }
 
-            //embed::embed();
-            /*
-            if plot {
-                embed::plot(&ingredients_vec);
-            }
+                //embed::embed();
+                /*
+                if plot {
+                    embed::plot(&ingredients_vec);
+                }
+                */
             */
         }
     }
