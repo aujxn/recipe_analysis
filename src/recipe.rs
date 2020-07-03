@@ -241,17 +241,29 @@ struct Recipes {
     recipes: HashMap<usize, Recipe>,
 }
 
-pub fn pull_recipes(q_tag: String) -> Vec<(i32, String)> {
+pub fn pull_recipes(q_tag: Option<String>) -> Vec<(i32, String)> {
     use crate::schema::*;
     let connection: PgConnection = crate::establish_connection();
 
-    recipes::table
-        .inner_join(recipe_ingredient::table.inner_join(ingredients::table))
-        .inner_join(recipe_tag::table.inner_join(tags::table))
-        .filter(tags::name.eq(q_tag))
-        .select((recipes::id, ingredients::name))
-        .load::<(i32, String)>(&connection)
-        .unwrap()
+    match q_tag {
+        Some(tag) => {
+            recipes::table
+                .inner_join(recipe_ingredient::table.inner_join(ingredients::table))
+                .inner_join(recipe_tag::table.inner_join(tags::table))
+                .filter(tags::name.eq(tag))
+                .select((recipes::id, ingredients::name))
+                .load::<(i32, String)>(&connection)
+                .unwrap()
+        }
+        None => {
+            recipes::table
+                .inner_join(recipe_ingredient::table.inner_join(ingredients::table))
+                .inner_join(recipe_tag::table.inner_join(tags::table))
+                .select((recipes::id, ingredients::name))
+                .load::<(i32, String)>(&connection)
+                .unwrap()
+        }
+    }
 }
 
 use crate::diesel::prelude::*;
@@ -310,7 +322,7 @@ pub fn consolodate() {
                                     .values(&new_recipe_ingredient)
                                     .execute(&connection)
                                     .unwrap();
-                            }
+                                }
                             None => {
                                 let new_ingredient = NewIngredient {
                                     name: parsed.TAG_NAME,
