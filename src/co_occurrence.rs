@@ -1,13 +1,16 @@
+use diesel::prelude::*;
 use indexmap::IndexSet;
 use itertools::Itertools;
 use matrixlab::matrix::sparse::SparseMatrix;
 use matrixlab::MatrixElement;
 use std::collections::HashMap;
-use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 
-pub fn make_coolist(recipes: Vec<(i32, String)>, target_ingredients: Vec<String>) {
+pub fn make_coolist(
+    recipes: Vec<(i32, String)>,
+    target_ingredients: Vec<String>,
+) -> (Vec<[i32; 3]>, Vec<String>) {
     let mut recipe_map: HashMap<usize, IndexSet<String>> = HashMap::new();
     let mut ingredient_map = HashMap::new();
     let mut ingredient_counter: usize = 0;
@@ -15,7 +18,6 @@ pub fn make_coolist(recipes: Vec<(i32, String)>, target_ingredients: Vec<String>
     let target_ingredients: IndexSet<String> = target_ingredients.into_iter().collect();
 
     for (recipe_id, ingredient) in recipes.into_iter() {
-
         match recipe_map.get_mut(&(recipe_id as usize)) {
             Some(ingredient_list) => {
                 ingredient_list.insert(ingredient);
@@ -30,7 +32,11 @@ pub fn make_coolist(recipes: Vec<(i32, String)>, target_ingredients: Vec<String>
 
     let mut points = vec![];
 
-    for (i, (_, ingredients)) in recipe_map.iter().filter(|(_, ingredients)| target_ingredients.is_subset(ingredients)).enumerate() {
+    for (i, (_, ingredients)) in recipe_map
+        .iter()
+        .filter(|(_, ingredients)| target_ingredients.is_subset(ingredients))
+        .enumerate()
+    {
         for ingredient in ingredients {
             let j = match ingredient_map.get(&ingredient) {
                 Some(&id) => id,
@@ -46,8 +52,6 @@ pub fn make_coolist(recipes: Vec<(i32, String)>, target_ingredients: Vec<String>
         }
     }
 
-    crate::embed::plot(&ingredients_vec);
-
     let recipe_ingredient =
         SparseMatrix::new(recipe_map.len(), ingredient_counter, points).unwrap();
 
@@ -61,10 +65,8 @@ pub fn make_coolist(recipes: Vec<(i32, String)>, target_ingredients: Vec<String>
     let coolist = ingredient_ingredient
         .elements()
         .filter(|(i, j, _)| i > j)
-        .map(|(i, j, val)| format!("{} {} {}", i, j, val))
-        .join("\n");
+        .map(|(i, j, val)| [i as i32, j as i32, *val as i32])
+        .collect();
 
-    let path = Path::new("temp/coolist");
-    let mut temp_file = File::create(&path).unwrap();
-    temp_file.write_all(coolist.as_bytes()).unwrap();
+    (coolist, ingredients_vec)
 }
