@@ -10,7 +10,7 @@ use std::path::Path;
 pub fn make_coolist(
     recipes: Vec<(i32, String)>,
     target_ingredients: Vec<String>,
-) -> (Vec<[i32; 3]>, Vec<String>) {
+) -> (usize, Vec<[i32; 3]>, Vec<String>) {
     let mut recipe_map: HashMap<usize, IndexSet<String>> = HashMap::new();
     let mut ingredient_map = HashMap::new();
     let mut ingredient_counter: usize = 0;
@@ -52,8 +52,8 @@ pub fn make_coolist(
         }
     }
 
-    let recipe_ingredient =
-        SparseMatrix::new(recipe_map.len(), ingredient_counter, points).unwrap();
+    let recipe_count = recipe_map.len();
+    let recipe_ingredient = SparseMatrix::new(recipe_count, ingredient_counter, points).unwrap();
 
     let ingredient_ingredient = &recipe_ingredient.transpose() * &recipe_ingredient;
 
@@ -68,5 +68,5 @@ pub fn make_coolist(
         .map(|(i, j, val)| [i as i32, j as i32, *val as i32])
         .collect();
 
-    (coolist, ingredients_vec)
+    (recipe_count, coolist, ingredients_vec)
 }
