@@ -53,6 +53,7 @@ pub fn make_coolist(
         }
         recipe_count = i;
     }
+    recipe_count += 1;
 
     let recipe_ingredient = SparseMatrix::new(recipe_count, ingredient_counter, points).unwrap();
 
