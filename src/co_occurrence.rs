@@ -32,6 +32,7 @@ pub fn make_coolist(
 
     let mut points = vec![];
 
+    let mut recipe_count = 0;
     for (i, (_, ingredients)) in recipe_map
         .iter()
         .filter(|(_, ingredients)| target_ingredients.is_subset(ingredients))
@@ -50,9 +51,9 @@ pub fn make_coolist(
             };
             points.push(MatrixElement::new(i, j, 1));
         }
+        recipe_count = i;
     }
 
-    let recipe_count = recipe_map.len();
     let recipe_ingredient = SparseMatrix::new(recipe_count, ingredient_counter, points).unwrap();
 
     let ingredient_ingredient = &recipe_ingredient.transpose() * &recipe_ingredient;
