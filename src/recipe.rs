@@ -246,23 +246,19 @@ pub fn pull_recipes(q_tag: Option<String>) -> Vec<(i32, String)> {
     let connection: PgConnection = crate::establish_connection();
 
     match q_tag {
-        Some(tag) => {
-            recipes::table
-                .inner_join(recipe_ingredient::table.inner_join(ingredients::table))
-                .inner_join(recipe_tag::table.inner_join(tags::table))
-                .filter(tags::name.eq(tag))
-                .select((recipes::id, ingredients::name))
-                .load::<(i32, String)>(&connection)
-                .unwrap()
-        }
-        None => {
-            recipes::table
-                .inner_join(recipe_ingredient::table.inner_join(ingredients::table))
-                .inner_join(recipe_tag::table.inner_join(tags::table))
-                .select((recipes::id, ingredients::name))
-                .load::<(i32, String)>(&connection)
-                .unwrap()
-        }
+        Some(tag) => recipes::table
+            .inner_join(recipe_ingredient::table.inner_join(ingredients::table))
+            .inner_join(recipe_tag::table.inner_join(tags::table))
+            .filter(tags::name.eq(tag))
+            .select((recipes::id, ingredients::name))
+            .load::<(i32, String)>(&connection)
+            .unwrap(),
+        None => recipes::table
+            .inner_join(recipe_ingredient::table.inner_join(ingredients::table))
+            .inner_join(recipe_tag::table.inner_join(tags::table))
+            .select((recipes::id, ingredients::name))
+            .load::<(i32, String)>(&connection)
+            .unwrap(),
     }
 }
 
@@ -322,7 +318,7 @@ pub fn consolodate() {
                                     .values(&new_recipe_ingredient)
                                     .execute(&connection)
                                     .unwrap();
-                                }
+                            }
                             None => {
                                 let new_ingredient = NewIngredient {
                                     name: parsed.TAG_NAME,
@@ -428,7 +424,7 @@ fn parse_recipe(recipe: &Nytc) -> Result<Vec<Response>> {
     let mut map = std::collections::HashMap::new();
     map.insert(String::from("line_delimited"), String::from("true"));
     map.insert(String::from("include_subrecipe"), String::from("false"));
-    map.insert(String::from("use_raw_foods"), String::from("true"));
+    map.insert(String::from("use_raw_foods"), String::from("false"));
     map.insert(String::from("use_branded_foods"), String::from("false"));
     map.insert(String::from("query"), query_string);
 
