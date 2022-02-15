@@ -50,15 +50,18 @@ impl ExpandedIngredientRelation {
     /// of ingredients in the recipe, ingredient internal nodes have degree equal to the
     /// number of that ingredient, and the target internal node has degree equal to the
     /// number of ingredients in all the recipes that are in the target set.
-    pub fn build_stars(
+    pub async fn build_stars(
         recipes: Vec<Vec<usize>>,
+        target_ingredients: Vec<usize>,
         num_ingredients: usize,
     ) -> ExpandedIngredientRelation {
         let mut vertices: Vec<ExpandedVertex> = (0..num_ingredients)
             .map(|id| ExpandedVertex::IngredientHub(id))
             .collect();
+        vertices.push(ExpandedVertex::RecipeHub(999999999));
+        let target_index = num_ingredients;
         let mut edges: BTreeMap<(usize, usize), usize> = BTreeMap::new();
-        let mut counter = num_ingredients;
+        let mut counter = num_ingredients + 1;
 
         for (recipe_id, recipe) in recipes.iter().enumerate() {
             vertices.push(ExpandedVertex::RecipeHub(recipe_id));
@@ -68,6 +71,9 @@ impl ExpandedIngredientRelation {
                 vertices.push(ExpandedVertex::Vertex((ingredient_id, recipe_id)));
                 edges.insert((ingredient_id, counter), 1);
                 edges.insert((recipe_index, counter), 1);
+                if target_ingredients.iter().any(|x| *x == ingredient_id) {
+                    edges.insert((target_index, counter), 1);
+                }
                 counter += 1;
             }
         }
@@ -75,7 +81,7 @@ impl ExpandedIngredientRelation {
         ExpandedIngredientRelation { vertices, edges }
     }
 
-    pub fn build_cliques(
+    pub async fn build_cliques(
         recipes: Vec<Vec<usize>>,
         target_ingredients: Vec<usize>,
         num_ingredients: usize,
@@ -147,7 +153,7 @@ impl ExpandedIngredientRelation {
         self.edges.len()
     }
 
-    pub fn build_coolist(&self) {
+    pub async fn build_coolist(&self) {
         let coolist = self
             .edges
             .iter()
@@ -159,7 +165,7 @@ impl ExpandedIngredientRelation {
         temp_file.write_all(coolist.as_bytes()).unwrap();
     }
 
-    pub fn build_adjacency_matrix(&self) -> SparseMatrix<usize> {
+    pub async fn build_adjacency_matrix(&self) -> SparseMatrix<usize> {
         let matrix_elements: Vec<MatrixElement<usize>> = self
             .edges
             .iter()
